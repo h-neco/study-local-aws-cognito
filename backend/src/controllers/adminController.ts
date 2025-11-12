@@ -1,38 +1,53 @@
-import { Request, Response } from "express";
+import { Response } from "express";
+import { AuthRequest } from "../types/AuthRequest";
 import {
   listCognitoUsers,
   approveCognitoUser,
-  deleteCognitoUser as deleteCognitoUserAdmin,
-} from "../utils/cognitoService";
+  deleteCognitoUser,
+} from "../services/cognitoService";
+import { saveLog } from "../services/dynamoService";
 
-// ユーザー一覧
-export async function listUsers(req: Request, res: Response) {
+/**
+ * ユーザー一覧取得
+ */
+export const getUserList = async (req: AuthRequest, res: Response) => {
   try {
     const users = await listCognitoUsers();
     res.json(users);
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    res.status(400).json({ error: message });
   }
-}
+};
 
-// ユーザー承認
-export async function approveUser(req: Request, res: Response) {
-  const { username } = req.params;
+/**
+ * ユーザー承認
+ */
+export const approveUser = async (req: AuthRequest, res: Response) => {
+  const { email } = req.body;
+
   try {
-    const result = await approveCognitoUser(username);
+    const result = await approveCognitoUser(email);
+    //await saveLog(req.user!.userId, "approve", { targetEmail: email });
     res.json(result);
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    res.status(400).json({ error: message });
   }
-}
+};
 
-// ユーザー削除
-export async function deleteUser(req: Request, res: Response) {
-  const { username } = req.params;
+/**
+ * ユーザー削除
+ */
+export const deleteUser = async (req: AuthRequest, res: Response) => {
+  const { email } = req.body;
+
   try {
-    await deleteCognitoUserAdmin(username);
-    res.json({ message: "User deleted" });
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
+    const result = await deleteCognitoUser(email);
+    //await saveLog(req.user!.userId, "delete", { targetEmail: email });
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    res.status(400).json({ error: message });
   }
-}
+};

@@ -1,10 +1,14 @@
-// adminRoutes.ts
-import { Router } from "express";
-import * as adminController from "../controllers/adminController";
+import express from "express";
+import {
+  getUserList,
+  approveUser,
+  deleteUser,
+} from "../controllers/adminController";
+import { authMiddleware } from "../utils/authMiddleware";
 
-const router = Router();
-router.get("/users", adminController.listUsers);
-router.post("/users/:username/approve", adminController.approveUser);
-router.delete("/users/:username", adminController.deleteUser);
+const router = express.Router();
+router.get("/users", authMiddleware, getUserList);
+router.post("/approve", authMiddleware, approveUser);
+router.post("/delete", authMiddleware, deleteUser);
 
 export default router;

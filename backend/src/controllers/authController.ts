@@ -1,51 +1,76 @@
-import { Request, Response } from "express";
+import { Response } from "express";
+import { AuthRequest } from "../types/AuthRequest";
 import {
   signupCognitoUser,
   loginCognitoUser,
   logoutCognitoUser,
   deleteCognitoUser as deleteCognitoUserAuth,
-} from "../utils/cognitoService";
+} from "../services/cognitoService";
+import { saveLog } from "../services/dynamoService";
 
-// サインアップ
-export async function signup(req: Request, res: Response) {
-  const { username, password, email } = req.body;
-  try {
-    const result = await signupCognitoUser(username, password, email);
-    res.status(201).json(result);
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
-  }
-}
+/**
+ * サインアップ
+ */
+export const signup = async (req: AuthRequest, res: Response) => {
+  const { email, password } = req.body;
 
-// ログイン
-export async function login(req: Request, res: Response) {
-  const { username, password } = req.body;
   try {
-    const result = await loginCognitoUser(username, password);
+    const result = await signupCognitoUser(email, password);
+    // TODO dynamodb service uuidでエラー
+    //await saveLog(email, "signup", { userSub: result.UserSub });
     res.json(result);
-  } catch (err: any) {
-    res.status(401).json({ error: err.message });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    res.status(400).json({ error: message });
   }
-}
+};
 
-// ログアウト
-export async function logout(req: Request, res: Response) {
+/**
+ * ログイン
+ */
+export const login = async (req: AuthRequest, res: Response) => {
+  const { email, password } = req.body;
+
+  try {
+    const result = await loginCognitoUser(email, password);
+    //await saveLog(email, "login", { userSub: (result as any).UserSub });
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    res.status(400).json({ error: message });
+  }
+};
+
+/**
+ * ログアウト
+ */
+export const logout = async (req: AuthRequest, res: Response) => {
   const { accessToken } = req.body;
-  try {
-    await logoutCognitoUser(accessToken);
-    res.json({ message: "Logged out" });
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
-  }
-}
 
-// ユーザー退会
-export async function deleteUser(req: Request, res: Response) {
-  const { username } = req.params;
   try {
-    await deleteCognitoUserAuth(username);
-    res.json({ message: "User deleted" });
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
+    const result = await logoutCognitoUser(accessToken);
+    //const userId = req.user?.userId ?? "unknown";
+    //await saveLog(userId, "logout");
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    res.status(400).json({ error: message });
   }
-}
+};
+
+/**
+ * 退会
+ */
+export const deleteUser = async (req: AuthRequest, res: Response) => {
+  const { email } = req.body;
+
+  try {
+    const result = await deleteCognitoUserAuth(email);
+    const userId = req.user?.userId ?? "unknown";
+    //await saveLog(userId, "delete");
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    res.status(400).json({ error: message });
+  }
+};

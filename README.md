@@ -14,13 +14,83 @@ terraform apply
 
 ## ユーザー登録
 
+```bash
 curl -X POST http://localhost:3000/auth/signup \
  -H "Content-Type: application/json" \
  -d '{"email":"test@example.com","password":"Passw0rd!"}'
+```
 
 ## 承認確認
 
+```bash
 aws cognito-idp list-users \
- --user-pool-id us-east-1_f8f3eebbf20f40dda572a18965310902 \
+ --user-pool-id <us-east-idp> \
  --endpoint-url http://localhost:5001 \
  --region us-east-1
+```
+
+## ユーザー承認
+
+```bash
+aws cognito-idp admin-confirm-sign-up \
+ --user-pool-id <us-east-idp> \
+ --username test@example.com \
+ --endpoint-url http://localhost:5001 \
+ --region us-east-1
+```
+
+## ログイン
+
+```bash
+curl -X POST http://localhost:3000/auth/login \
+ -H "Content-Type: application/json" \
+ -d '{"email":"test@example.com","password":"Passw0rd!"}'
+```
+
+## admin にする
+
+```bash
+aws cognito-idp admin-update-user-attributes \
+ --user-pool-id us-east-idp \
+ --username test@example.com \
+ --user-attributes Name="custom:role",Value="admin" \
+ --endpoint-url http://localhost:5001 \
+ --region us-east-1
+```
+
+## 承認及び CURL 用 JWT 取得
+
+```bash
+curl -X POST http://localhost:3000/admin/approve \
+ -H "Content-Type: application/json" \
+ -H "Authorization: Bearer <ADMIN_JWT_TOKEN>" \
+ -d '{"email":"test2@example.com"}'
+```
+
+## ユーザー取得
+
+```bash
+curl -X GET http://localhost:3000/admin/users \
+ -H "Content-Type: application/json" \
+ -H "Authorization: Bearer <ADMIN_JWT_TOKEN>"
+```
+
+## 削除
+
+```bash
+curl -X POST http://localhost:3000/admin/delete \
+ -H "Content-Type: application/json" \
+ -H "Authorization: Bearer <ADMIN_JWT_TOKEN>" \
+ -d '{"email":"test2@example.com"}'
+```
+
+## logout
+
+```bash
+curl -X POST http://localhost:3000/auth/logout \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <ADMIN_JWT_TOKEN>" \
+  -d '{
+    "accessToken": "<ADMIN_JWT_TOKEN>"
+  }'
+```

@@ -11,7 +11,7 @@ type Env = {
   TARGET_ENV: "local" | "production";
   AWS_REGION: string;
   DYNAMODB_ENDPOINT?: string;
-  USER_TABLE: string;
+  DYNAMODB_LOG_TABLE: string;
   COGNITO_ENDPOINT: string;
   COGNITO_USER_POOL_ID: string;
   COGNITO_CLIENT_ID: string;
@@ -25,7 +25,7 @@ function getEnv(): Env {
     TARGET_ENV,
     AWS_REGION,
     DYNAMODB_ENDPOINT,
-    USER_TABLE,
+    DYNAMODB_LOG_TABLE,
     COGNITO_ENDPOINT,
     COGNITO_USER_POOL_ID,
     COGNITO_CLIENT_ID,
@@ -36,7 +36,7 @@ function getEnv(): Env {
 
   if (!TARGET_ENV) throw new Error("Missing TARGET_ENV");
   if (!AWS_REGION) throw new Error("Missing AWS_REGION");
-  if (!USER_TABLE) throw new Error("Missing USER_TABLE");
+  if (!DYNAMODB_LOG_TABLE) throw new Error("Missing USER_TABLE");
   if (!COGNITO_ENDPOINT) throw new Error("Missing COGNITO_ENDPOINT");
   if (!COGNITO_USER_POOL_ID) throw new Error("Missing COGNITO_USER_POOL_ID");
   if (!COGNITO_CLIENT_ID) throw new Error("Missing COGNITO_CLIENT_ID");
@@ -45,7 +45,7 @@ function getEnv(): Env {
     TARGET_ENV: TARGET_ENV as "local" | "production",
     AWS_REGION,
     DYNAMODB_ENDPOINT,
-    USER_TABLE,
+    DYNAMODB_LOG_TABLE,
     COGNITO_ENDPOINT,
     COGNITO_USER_POOL_ID,
     COGNITO_CLIENT_ID,

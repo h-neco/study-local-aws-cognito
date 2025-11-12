@@ -1,0 +1,31 @@
+{
+  "name": "local-aws-backend",
+  "version": "1.0.0",
+  "main": "dist/app.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn src/app.ts",
+    "build": "esbuild src/app.ts --bundle --platform=node --target=node20 --outdir=dist",
+    "start": "node dist/app.js"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1551.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.926.0",
+    "@aws-sdk/client-dynamodb": "^3.926.0",
+    "@aws-sdk/client-ses": "^3.926.0",
+    "@aws-sdk/lib-dynamodb": "^3.926.0",
+    "@aws-sdk/node-http-handler": "^3.374.0",
+    "@types/aws-lambda": "^8.10.157",
+    "@types/body-parser": "^1.19.6",
+    "@types/express": "^5.0.5",
+    "@types/node": "^24.10.0",
+    "@types/nodemailer": "^7.0.3",
+    "esbuild": "^0.25.12",
+    "nodemailer": "^7.0.10",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3"
+  }
+}

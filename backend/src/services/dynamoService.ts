@@ -2,6 +2,7 @@ import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { NodeHttpHandler } from "@aws-sdk/node-http-handler";
 import { env } from "../config/env";
+import uuid, { timestamp } from "ui7";
 
 export type LogRecord = {
   log_id: string;
@@ -38,11 +39,8 @@ export async function saveLog(
   action: LogRecord["action"],
   meta?: Record<string, any>
 ) {
-  // uuid を動的 import
-  const { v4: uuidv4 } = await import("uuid");
-
   const log: LogRecord = {
-    log_id: uuidv4(),
+    log_id: uuid(),
     user_id: userId,
     action,
     timestamp: new Date().toISOString(),

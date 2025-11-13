@@ -16,8 +16,7 @@ export const signup = async (req: AuthRequest, res: Response) => {
 
   try {
     const result = await signupCognitoUser(email, password);
-    // TODO dynamodb service uuidでエラー
-    //await saveLog(email, "signup", { userSub: result.UserSub });
+    await saveLog(email, "signup");
     res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -33,7 +32,7 @@ export const login = async (req: AuthRequest, res: Response) => {
 
   try {
     const result = await loginCognitoUser(email, password);
-    //await saveLog(email, "login", { userSub: (result as any).UserSub });
+    await saveLog(email, "login");
     res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -45,12 +44,11 @@ export const login = async (req: AuthRequest, res: Response) => {
  * ログアウト
  */
 export const logout = async (req: AuthRequest, res: Response) => {
-  const { accessToken } = req.body;
+  const { email, accessToken } = req.body;
 
   try {
     const result = await logoutCognitoUser(accessToken);
-    //const userId = req.user?.userId ?? "unknown";
-    //await saveLog(userId, "logout");
+    await saveLog(email, "logout");
     res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -66,8 +64,7 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
 
   try {
     const result = await deleteCognitoUserAuth(email);
-    const userId = req.user?.userId ?? "unknown";
-    //await saveLog(userId, "delete");
+    await saveLog(email, "delete");
     res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";

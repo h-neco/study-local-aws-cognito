@@ -10,6 +10,7 @@ export type LogRecord = {
   action: "login" | "logout" | "signup" | "delete" | "approve";
   timestamp: string;
   meta?: Record<string, any>;
+  ttl?: number;
 };
 
 function initDynamoDBClient() {
@@ -39,12 +40,16 @@ export async function saveLog(
   action: LogRecord["action"],
   meta?: Record<string, any>
 ) {
+  const now = Math.floor(Date.now() / 1000);
+  const ttl = now + 60 * 60 * 24 * 30; // 30日後（秒単位）
+
   const log: LogRecord = {
     log_id: uuid(),
     user_id: userId,
     action,
-    timestamp: new Date().toISOString(),
+    timestamp: new Date(now * 1000).toISOString(),
     meta,
+    ttl,
   };
 
   await docClient.send(
@@ -56,6 +61,7 @@ export async function saveLog(
         action: { S: log.action },
         timestamp: { S: log.timestamp },
         meta: { S: JSON.stringify(meta || {}) },
+        ttl: { N: String(ttl) },
       },
     })
   );

@@ -20,23 +20,16 @@ curl -X POST http://localhost:3000/auth/signup \
  -d '{"email":"test@example.com","password":"Passw0rd!"}'
 ```
 
-## 承認確認
+## メール確認 (ローカルで擬似再現)
 
-```bash
-aws cognito-idp list-users \
- --user-pool-id <us-east-idp> \
- --endpoint-url http://localhost:5001 \
- --region us-east-1
+```
+open http://localhost:8025/
 ```
 
 ## ユーザー承認
 
 ```bash
-aws cognito-idp admin-confirm-sign-up \
- --user-pool-id <us-east-idp> \
- --username test@example.com \
- --endpoint-url http://localhost:5001 \
- --region us-east-1
+curl -X GET "http://localhost:3000/auth/confirm?email=test2@example.com&code=999999
 ```
 
 ## ログイン
@@ -56,15 +49,6 @@ aws cognito-idp admin-update-user-attributes \
  --user-attributes Name="custom:role",Value="admin" \
  --endpoint-url http://localhost:5001 \
  --region us-east-1
-```
-
-## 承認及び CURL 用 JWT 取得
-
-```bash
-curl -X POST http://localhost:3000/admin/approve \
- -H "Content-Type: application/json" \
- -H "Authorization: Bearer <ADMIN_JWT_TOKEN>" \
- -d '{"email":"test2@example.com"}'
 ```
 
 ## ユーザー取得

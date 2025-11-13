@@ -7,6 +7,7 @@ import {
   AdminConfirmSignUpCommand,
   ListUsersCommand,
   AuthFlowType,
+  ConfirmSignUpCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { env } from "../config/env";
 
@@ -93,4 +94,20 @@ export async function approveCognitoUser(email: string) {
   });
   await client.send(command);
   return { message: `User ${email} approved successfully` };
+}
+
+/**
+ * サインアップ確認（Cognito用）
+ * @param email ユーザーのメールアドレス
+ * @param code 確認コード
+ */
+export async function confirmCognitoUser(email: string, code: string) {
+  const command = new ConfirmSignUpCommand({
+    ClientId: env.COGNITO_CLIENT_ID,
+    Username: email,
+    ConfirmationCode: code,
+  });
+  await client.send(command);
+
+  return { message: `User ${email} confirmed successfully` };
 }

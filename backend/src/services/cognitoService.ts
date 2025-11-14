@@ -8,6 +8,9 @@ import {
   ListUsersCommand,
   AuthFlowType,
   ConfirmSignUpCommand,
+  AdminUpdateUserAttributesCommand,
+  ChangePasswordCommand,
+  UpdateUserAttributesCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { env } from "../config/env";
 
@@ -110,4 +113,98 @@ export async function confirmCognitoUser(email: string, code: string) {
   await client.send(command);
 
   return { message: `User ${email} confirmed successfully` };
+}
+
+/**
+ * 管理者権限を付与（isAdmin = true）
+ */
+export async function makeUserAdmin(email: string) {
+  const command = new AdminUpdateUserAttributesCommand({
+    UserPoolId: env.COGNITO_USER_POOL_ID,
+    Username: email,
+    UserAttributes: [
+      {
+        Name: "custom:isAdmin",
+        Value: "true",
+      },
+    ],
+  });
+
+  await client.send(command);
+
+  return { message: `User ${email} is now admin` };
+}
+
+/**
+ * 管理者権限を剥奪（isAdmin = false）
+ */
+export async function removeUserAdmin(email: string) {
+  const command = new AdminUpdateUserAttributesCommand({
+    UserPoolId: env.COGNITO_USER_POOL_ID,
+    Username: email,
+    UserAttributes: [
+      {
+        Name: "custom:isAdmin",
+        Value: "false",
+      },
+    ],
+  });
+
+  await client.send(command);
+
+  return { message: `User ${email} admin removed` };
+}
+
+/**
+ * パスワード変更
+ */
+export async function changeCognitoPassword(
+  accessToken: string,
+  previousPassword: string,
+  proposedPassword: string
+) {
+  const command = new ChangePasswordCommand({
+    AccessToken: accessToken,
+    PreviousPassword: previousPassword,
+    ProposedPassword: proposedPassword,
+  });
+  await client.send(command);
+  return { message: "Password changed successfully" };
+}
+
+/**
+ * メールアドレス変更
+ */
+export async function updateCognitoEmail(
+  accessToken: string,
+  newEmail: string
+) {
+  if (env.TARGET_ENV === "local") {
+    // ローカル用: 確認コード固定 999999
+    const confirmationCode = "999999";
+    console.log(
+      `Local: request email change to ${newEmail}, code=${confirmationCode}`
+    );
+    return {
+      confirmationCode,
+      newEmail,
+      message: "Local email change requested",
+    };
+  } else {
+    const command = new UpdateUserAttributesCommand({
+      AccessToken: accessToken,
+      UserAttributes: [{ Name: "email", Value: newEmail }],
+    });
+    await client.send(command);
+    return { message: `Email updated to ${newEmail}` };
+  }
+}
+
+export async function emailChange(accessToken: string, newEmail: string) {
+  const command = new UpdateUserAttributesCommand({
+    UserAttributes: [{ Name: "email", Value: newEmail }],
+    AccessToken: accessToken,
+  });
+  await client.send(command);
+  return { message: `Email changed to ${newEmail}` };
 }

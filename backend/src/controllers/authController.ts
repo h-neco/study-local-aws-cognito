@@ -7,6 +7,9 @@ import {
   deleteCognitoUser as deleteCognitoUserAuth,
   confirmCognitoUser,
   approveCognitoUser,
+  changeCognitoPassword,
+  updateCognitoEmail,
+  emailChange,
 } from "../services/cognitoService";
 import { saveLog } from "../services/dynamoService";
 import { sendMail } from "../services/mailService";
@@ -34,9 +37,9 @@ export const signup = async (req: AuthRequest, res: Response) => {
       );
       console.log(`確認メールを送信しました: ${confirmLink}`);
     }
-    const result = await signupCognitoUser(email, password);
+    await signupCognitoUser(email, password);
     await saveLog(email, "signup");
-    res.json(result);
+    res.status(200).json({ message: "確認メール発行しました" });
   } catch (error: any) {
     res.status(400).json({ error: error.message || "Unknown error" });
   }
@@ -63,7 +66,7 @@ export const confirmSignup = async (req: Request, res: Response) => {
     }
 
     await saveLog(email, "approve");
-    res.send("アカウントが有効化されました。ログイン可能です。");
+    res.status(200).json({ message: "有効化されました。" });
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to confirm" });
   }
@@ -89,11 +92,13 @@ export const login = async (req: AuthRequest, res: Response) => {
  * ログアウト
  */
 export const logout = async (req: AuthRequest, res: Response) => {
-  const { email, accessToken } = req.body;
+  const userId = req.user?.userId!;
+  const { accessToken } = req.body;
 
   try {
     const result = await logoutCognitoUser(accessToken);
-    await saveLog(email, "logout");
+    await saveLog(userId, "logout");
+
     res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -102,17 +107,116 @@ export const logout = async (req: AuthRequest, res: Response) => {
 };
 
 /**
- * 退会
+ * 退会処理
  */
 export const deleteUser = async (req: AuthRequest, res: Response) => {
-  const { email } = req.body;
-
+  const userId = req.user?.userId!;
   try {
-    const result = await deleteCognitoUserAuth(email);
-    await saveLog(email, "delete");
+    const result = await deleteCognitoUserAuth(userId);
+    await saveLog(userId, "delete");
+
     res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     res.status(400).json({ error: message });
+  }
+};
+
+/**
+ * メールアドレス変更
+ */
+export const updateEmail = async (req: AuthRequest, res: Response) => {
+  const { newEmail, accessToken } = req.body;
+  const userId = req.user!.userId;
+
+  if (!newEmail || !accessToken) {
+    return res
+      .status(400)
+      .json({ error: "newEmail, accessToken, and email are required" });
+  }
+
+  try {
+    // local なら確認コード固定
+    let confirmationCode = "999999";
+
+    if (env.TARGET_ENV !== "local") {
+      // 本番: Cognito に更新リクエスト（Cognito がメール送信）
+      const result = await updateCognitoEmail(accessToken, newEmail);
+      // Cognito から送られるコードは result に入ることもある
+      confirmationCode = result.confirmationCode || "";
+    } else {
+      // local 環境は MailHog に確認メールを送る
+      const confirmLink = `http://localhost:3000/auth/email-change-confirm?newEmail=${encodeURIComponent(
+        newEmail
+      )}&accessToken=${encodeURIComponent(
+        accessToken
+      )}&code=${confirmationCode}`;
+
+      await sendMail(
+        newEmail,
+        "【メール変更確認】リンクをクリックしてください",
+        `以下のリンクでメール変更を承認してください\n\n${confirmLink}`
+      );
+    }
+
+    await saveLog(userId, "updateEmail", { newEmail });
+    res.json({
+      message: "Confirmation mail sent",
+      confirmationCode:
+        env.TARGET_ENV === "local" ? confirmationCode : undefined,
+    });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message || "Failed to update email" });
+  }
+};
+
+export const updateEmailConfirm = async (req: AuthRequest, res: Response) => {
+  const userId = req.user!.userId;
+  const accessToken = req.query.accessToken as string | undefined;
+  const newEmail = req.query.newEmail as string | undefined;
+
+  if (!newEmail || !accessToken) {
+    return res.status(400).json({ error: "email, accessToken are required" });
+  }
+
+  try {
+    await emailChange(accessToken, newEmail);
+
+    await saveLog(userId, "updateEmail", { newEmail });
+    res.json({ message: `メールアドレスが ${newEmail} に変更されました` });
+  } catch (error: any) {
+    res
+      .status(500)
+      .json({ error: error.message || "Failed to confirm email change" });
+  }
+};
+
+/**
+ * パスワード変更
+ */
+export const updatePassword = async (req: AuthRequest, res: Response) => {
+  const { previousPassword, proposedPassword } = req.body;
+  const userId = req.user!.userId;
+  const accessToken = req.headers.authorization?.split(" ")[1];
+
+  if (!previousPassword || !proposedPassword || !accessToken) {
+    return res.status(400).json({
+      error:
+        "previousPassword and proposedPassword are required, and Authorization header must be set",
+    });
+  }
+
+  try {
+    await changeCognitoPassword(
+      accessToken,
+      previousPassword,
+      proposedPassword
+    );
+    await saveLog(userId, "changePassword");
+    res.json({ message: `パスワードが変更されました` });
+  } catch (error: any) {
+    res
+      .status(400)
+      .json({ error: error.message || "Failed to change password" });
   }
 };

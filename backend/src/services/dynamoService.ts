@@ -2,12 +2,21 @@ import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { NodeHttpHandler } from "@aws-sdk/node-http-handler";
 import { env } from "../config/env";
-import uuid, { timestamp } from "ui7";
+import uuid from "ui7";
 
 export type LogRecord = {
   log_id: string;
   user_id: string;
-  action: "login" | "logout" | "signup" | "delete" | "approve";
+  action:
+    | "login"
+    | "logout"
+    | "signup"
+    | "delete"
+    | "approve"
+    | "promoteAdmin"
+    | "demoteAdmin"
+    | "updateEmail"
+    | "changePassword";
   timestamp: string;
   meta?: Record<string, any>;
   ttl?: number;

@@ -46,7 +46,7 @@ curl -X POST http://localhost:3000/auth/login \
 aws cognito-idp admin-update-user-attributes \
  --user-pool-id us-east-idp \
  --username test@example.com \
- --user-attributes Name="custom:role",Value="admin" \
+ --user-attributes Name="custom:role",Value="isAdmin" \
  --endpoint-url http://localhost:5001 \
  --region us-east-1
 ```
@@ -58,6 +58,10 @@ curl -X GET http://localhost:3000/admin/users \
  -H "Content-Type: application/json" \
  -H "Authorization: Bearer <ADMIN_JWT_TOKEN>"
 ```
+
+curl -X GET http://localhost:3000/admin/users \
+ -H "Content-Type: application/json" \
+ -H "Authorization: Bearer <>"
 
 ## 削除
 

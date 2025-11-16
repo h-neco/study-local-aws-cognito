@@ -4,12 +4,13 @@ import {
   signupCognitoUser,
   loginCognitoUser,
   logoutCognitoUser,
-  deleteCognitoUser as deleteCognitoUserAuth,
   confirmCognitoUser,
   approveCognitoUser,
   changeCognitoPassword,
   updateCognitoEmail,
   emailChange,
+  listCognitoUsers,
+  deleteCognitoUser,
 } from "../services/cognitoService";
 import { saveLog } from "../services/dynamoService";
 import { sendMail } from "../services/mailService";
@@ -112,9 +113,14 @@ export const logout = async (req: AuthRequest, res: Response) => {
 export const deleteUser = async (req: AuthRequest, res: Response) => {
   const userId = req.user?.userId!;
   try {
-    const result = await deleteCognitoUserAuth(userId);
+    const users = await listCognitoUsers();
+    const targetUser = users.find((u) =>
+      u.Attributes?.some((a) => a.Name === "sub" && a.Value === userId)
+    );
+    if (!targetUser) throw new Error("User not found");
+    const email = targetUser.Username!;
+    const result = deleteCognitoUser(email);
     await saveLog(userId, "delete");
-
     res.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -170,6 +176,12 @@ export const updateEmail = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * メールアドレス確認
+ * @param req
+ * @param res
+ * @returns
+ */
 export const updateEmailConfirm = async (req: AuthRequest, res: Response) => {
   const userId = req.user!.userId;
   const accessToken = req.query.accessToken as string | undefined;

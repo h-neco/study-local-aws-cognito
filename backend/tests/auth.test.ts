@@ -1,6 +1,5 @@
 import request from "supertest";
 import app from "../src/app"; // Express アプリ
-import { env } from "../src/config/env";
 
 describe("Auth API (Local)", () => {
   const randomNumber = Math.floor(10000000 + Math.random() * 90000000); // 10000000〜99999999
@@ -59,7 +58,6 @@ describe("Auth API (Local)", () => {
   });
 
   it("change password", async () => {
-    console.log({ accessToken });
     const res = await request(app)
       .post("/auth/update-password")
       .set("Authorization", `Bearer ${accessToken}`)
@@ -67,7 +65,16 @@ describe("Auth API (Local)", () => {
         previousPassword: "Passw0rd!",
         proposedPassword: "NewPassw0rd!",
       });
+
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toContain("パスワードが変更されました");
+  });
+
+  it("delete", async () => {
+    const res = await request(app)
+      .post("/auth/delete")
+      .set("Authorization", `Bearer ${accessToken}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toBeDefined();
   });
 });

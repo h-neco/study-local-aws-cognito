@@ -4,7 +4,7 @@
   "main": "dist/app.js",
   "scripts": {
     "dev": "ts-node-dev --respawn src/server.ts",
-    "build": "esbuild src/app.ts --bundle --platform=node --target=node20 --outdir=dist",
+    "build": "esbuild src/app.ts --bundle --platform=node --target=node24 --outdir=dist",
     "start": "node dist/app.js",
     "test": "jest"
   },
@@ -12,7 +12,8 @@
     "aws-sdk": "^2.1551.0",
     "dotenv": "^16.3.1",
     "express": "^4.19.2",
-    "ui7": "^0.2.3"
+    "ui7": "^0.2.3",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.926.0",
@@ -30,6 +31,7 @@
     "@types/node": "^24.10.0",
     "@types/nodemailer": "^7.0.3",
     "@types/supertest": "^6.0.3",
+    "@types/uuid": "^8.3.4",
     "axios": "^1.13.2",
     "esbuild": "^0.25.12",
     "jest": "^30.2.0",

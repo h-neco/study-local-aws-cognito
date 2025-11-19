@@ -23,9 +23,11 @@ export const signup = async (req: AuthRequest, res: Response) => {
   const { email, password } = req.body;
 
   try {
+    await signupCognitoUser(email, password);
+
     if (env.TARGET_ENV === "local") {
       // 📩 確認リンクを生成
-      const confirmLink = `http://localhost:5001/auth/confirm?email=${encodeURIComponent(
+      const confirmLink = `http://localhost:3000/auth/confirm?email=${encodeURIComponent(
         email
       )}&code=999999`; // ローカル用のコード
 
@@ -38,7 +40,7 @@ export const signup = async (req: AuthRequest, res: Response) => {
       );
       console.log(`確認メールを送信しました: ${confirmLink}`);
     }
-    await signupCognitoUser(email, password);
+
     await saveLog(email, "signup");
     res.status(200).json({ message: "確認メール発行しました" });
   } catch (error: any) {
@@ -67,9 +69,11 @@ export const confirmSignup = async (req: Request, res: Response) => {
     }
 
     await saveLog(email, "approve");
-    res.status(200).json({ message: "有効化されました。" });
+    // ?confirmed=true を付与してフロントで「登録完了」を表示できる
+    res.redirect(`${env.FRONTEND_URL}/login?confirmed=true&email=${email}`);
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to confirm" });
+    // 失敗時はエラーページやログイン画面にリダイレクト
+    res.redirect(`${env.FRONTEND_URL}/login?confirmed=false`);
   }
 };
 
@@ -78,7 +82,6 @@ export const confirmSignup = async (req: Request, res: Response) => {
  */
 export const login = async (req: AuthRequest, res: Response) => {
   const { email, password } = req.body;
-
   try {
     const result = await loginCognitoUser(email, password);
     await saveLog(email, "login");

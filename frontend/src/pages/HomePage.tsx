@@ -1,38 +1,19 @@
-import { Link } from "react-router-dom";
+// src/pages/HomePage.tsx
+import { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function HomePage() {
-  // localStorage に保存されているトークンで判定
-  const accessToken = localStorage.getItem("accessToken");
+  const navigate = useNavigate();
 
-  if (accessToken) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
-        <h1 className="text-3xl font-bold mb-4">ようこそ！</h1>
-        <p className="mb-6">あなたはログイン済みです。</p>
+  // すでにログイン済みなら自動リダイレクト
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      navigate("/user/dashboard");
+    }
+  }, [navigate]);
 
-        <div className="space-y-4">
-          <Link
-            to="/profile"
-            className="block w-64 text-center bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg"
-          >
-            プロフィールを見る
-          </Link>
-
-          <button
-            onClick={() => {
-              localStorage.removeItem("accessToken");
-              window.location.reload(); // 簡易的にログアウト反映
-            }}
-            className="block w-64 text-center bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg"
-          >
-            ログアウト
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ログインしていない場合
+  // ログインしていない場合の表示
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
       <h1 className="text-3xl font-bold mb-8">Welcome!</h1>

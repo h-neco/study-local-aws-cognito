@@ -53,14 +53,9 @@ terraform init && terraform plan
 terraform apply
 cd ..
 
-### backend
-cd backend
-npm run dev &
-cd ..
-
-## frontend
-cd frontend
-npm run dev
+### backend & frontend
+./local-start.sh start
+./local-start.sh stop
 ```
 
 ## メール確認 (ローカルで擬似再現)

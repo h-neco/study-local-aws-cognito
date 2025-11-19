@@ -18,6 +18,7 @@ type Env = {
   MAIL_PROVIDER?: "mailhog" | "ses";
   MAILHOG_HOST?: string;
   MAILHOG_PORT?: string;
+  FRONTEND_URL: string;
 };
 
 function getEnv(): Env {
@@ -32,6 +33,7 @@ function getEnv(): Env {
     MAIL_PROVIDER,
     MAILHOG_HOST,
     MAILHOG_PORT,
+    FRONTEND_URL,
   } = process.env;
 
   if (!TARGET_ENV) throw new Error("Missing TARGET_ENV");
@@ -40,6 +42,7 @@ function getEnv(): Env {
   if (!COGNITO_ENDPOINT) throw new Error("Missing COGNITO_ENDPOINT");
   if (!COGNITO_USER_POOL_ID) throw new Error("Missing COGNITO_USER_POOL_ID");
   if (!COGNITO_CLIENT_ID) throw new Error("Missing COGNITO_CLIENT_ID");
+  if (!FRONTEND_URL) throw new Error("Missing FRONTEND_URL");
 
   return {
     TARGET_ENV: TARGET_ENV as "local" | "production",
@@ -52,6 +55,7 @@ function getEnv(): Env {
     MAIL_PROVIDER: MAIL_PROVIDER as "mailhog" | "ses",
     MAILHOG_HOST,
     MAILHOG_PORT,
+    FRONTEND_URL,
   };
 }
 

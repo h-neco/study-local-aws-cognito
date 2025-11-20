@@ -40,7 +40,7 @@ export default function AdminDashboard() {
     fetchUsers();
   }, []);
 
-  const handlePromote = async (username: string) => {
+  const handlePromote = async (email: string) => {
     if (!token) return;
     await fetch("http://localhost:3000/admin/promote", {
       method: "POST",
@@ -48,12 +48,12 @@ export default function AdminDashboard() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ email: username }),
+      body: JSON.stringify({ email: email }),
     });
     fetchUsers(); // 更新
   };
 
-  const handleDemote = async (username: string) => {
+  const handleDemote = async (email: string) => {
     if (!token) return;
     await fetch("http://localhost:3000/admin/demote", {
       method: "POST",
@@ -61,14 +61,14 @@ export default function AdminDashboard() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ email: username }),
+      body: JSON.stringify({ email: email }),
     });
     fetchUsers();
   };
 
-  const handleDelete = async (username: string) => {
+  const handleDelete = async (email: string) => {
     if (!token) return;
-    if (!confirm(`${username} を削除しますか？`)) return;
+    if (!confirm(`${email} を削除しますか？`)) return;
 
     await fetch("http://localhost:3000/admin/delete", {
       method: "POST",
@@ -76,7 +76,7 @@ export default function AdminDashboard() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ email: username }),
+      body: JSON.stringify({ email: email }),
     });
     fetchUsers();
   };
@@ -89,7 +89,7 @@ export default function AdminDashboard() {
         <table className="min-w-full table-fixed bg-white border border-gray-200 rounded-lg">
           <thead className="bg-gray-100">
             <tr>
-              <th className="w-1/6 px-4 py-2 border-b text-left">Username</th>
+              <th className="w-1/6 px-4 py-2 border-b text-left">Email</th>
               <th className="w-1/12 px-4 py-2 border-b text-left">Admin</th>
               <th className="w-1/12 px-4 py-2 border-b text-left">Status</th>
               <th className="w-1/12 px-4 py-2 border-b text-left">Enabled</th>
@@ -104,11 +104,13 @@ export default function AdminDashboard() {
                 user.Attributes.find((a) => a.Name === "custom:isAdmin")
                   ?.Value === "true";
 
+              const email = user.Attributes.find(
+                (a) => a.Name === "email"
+              )?.Value;
+
               return (
                 <tr key={user.Username} className="hover:bg-gray-50">
-                  <td className="px-4 py-2 border-b truncate">
-                    {user.Username}
-                  </td>
+                  <td className="px-4 py-2 border-b truncate">{email}</td>
                   <td className="px-4 py-2 border-b">
                     {isAdmin ? "Yes" : "No"}
                   </td>
@@ -126,21 +128,21 @@ export default function AdminDashboard() {
                     <div className="flex gap-2 flex-wrap">
                       {isAdmin ? (
                         <button
-                          onClick={() => handleDemote(user.Username)}
+                          onClick={() => handleDemote(email)}
                           className="px-2 py-1 bg-yellow-500 text-white rounded text-sm"
                         >
                           権限剥奪
                         </button>
                       ) : (
                         <button
-                          onClick={() => handlePromote(user.Username)}
+                          onClick={() => handlePromote(email)}
                           className="px-2 py-1 bg-green-500 text-white rounded text-sm"
                         >
                           管理者にする
                         </button>
                       )}
                       <button
-                        onClick={() => handleDelete(user.Username)}
+                        onClick={() => handleDelete(email)}
                         className="px-2 py-1 bg-red-500 text-white rounded text-sm"
                       >
                         削除

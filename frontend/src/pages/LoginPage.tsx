@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { login } from "@/api/auth";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -10,18 +11,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // URLクエリにemailがあれば初期値にセット
+  // URLの email を初期値に反映
   useEffect(() => {
     const emailParam = searchParams.get("email");
     if (emailParam) setEmail(emailParam);
   }, [searchParams]);
 
-  // すでにログイン済みなら自動リダイレクト
+  // ログイン済みなら /user/dashboard へ
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
-    if (token) {
-      navigate("/user/dashboard");
-    }
+    if (token) navigate("/user/dashboard");
   }, [navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -30,25 +29,15 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:3000/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const data: any = await login({ email, password });
 
-      if (!res.ok) {
-        setError("ログインに失敗しました");
-        setLoading(false);
-        return;
-      }
-
-      const data = await res.json();
+      // accessToken 保存
       localStorage.setItem("accessToken", data.accessToken);
 
-      // ログイン成功時のリダイレクト
+      // ログイン成功時
       navigate("/user/dashboard");
-    } catch (err) {
-      setError("サーバーに接続できません");
+    } catch (err: any) {
+      setError(err.message || "ログインに失敗しました");
     } finally {
       setLoading(false);
     }

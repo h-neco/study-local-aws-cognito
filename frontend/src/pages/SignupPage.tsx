@@ -1,6 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { signup } from "@/api/auth";
 
 export default function SignupPage() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -12,22 +15,15 @@ export default function SignupPage() {
     setMessage(null);
 
     try {
-      const res = await fetch("http://localhost:3000/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setMessage(data.error || "サインアップに失敗しました");
-      } else {
-        setMessage("登録成功！確認メールをチェックしてください。");
-      }
+      await signup({ email: email, password: password });
+      setMessage("登録成功！確認メールをチェックしてください。");
+      setTimeout(() => navigate("/login"), 3000); // 2秒後ログイン画面へ
     } catch (err: any) {
-      setMessage(err.message || "ネットワークエラー");
+      let msg = err.message || "サインアップに失敗しました";
+      if (err.message === email) {
+        msg = "登録済みのメールアドレスです。";
+      }
+      setMessage(msg);
     } finally {
       setLoading(false);
     }
@@ -75,7 +71,13 @@ export default function SignupPage() {
         </form>
 
         {message && (
-          <p className="text-center mt-4 text-sm text-red-500">{message}</p>
+          <p
+            className={`text-center mt-4 text-sm ${
+              message.includes("成功") ? "text-green-500" : "text-red-500"
+            }`}
+          >
+            {message}
+          </p>
         )}
 
         <div className="text-center mt-4">

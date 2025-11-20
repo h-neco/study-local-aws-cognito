@@ -1,41 +1,35 @@
 import { useState } from "react";
+import { updateEmail } from "@/api/auth";
 
 export default function ChangeEmail() {
   const [newEmail, setNewEmail] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage("");
+    setMessage(null);
+    setLoading(true);
 
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken) {
       setMessage("ログイン情報がありません。");
+      setLoading(false);
       return;
     }
 
-    const res = await fetch("http://localhost:3000/auth/update-email", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        newEmail,
-        accessToken,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
+    try {
+      await updateEmail(newEmail);
       setMessage(
         "確認メールを送信しました。メール内のリンクをクリックして更新を完了してください。"
       );
-    } else {
-      setMessage(data.error || "メール変更に失敗しました");
+    } catch (err: any) {
+      console.log(err);
+      setMessage(err.response?.data?.error || "メール変更に失敗しました");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="max-w-lg mx-auto p-6">
@@ -55,14 +49,21 @@ export default function ChangeEmail() {
 
         <button
           type="submit"
-          className="px-4 py-2 bg-blue-600 text-white rounded"
+          className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-60"
+          disabled={loading}
         >
-          送信する
+          {loading ? "送信中..." : "送信する"}
         </button>
       </form>
 
       {message && (
-        <div className="mt-4 text-center text-green-600">{message}</div>
+        <div
+          className={`mt-4 text-center ${
+            message.includes("確認メール") ? "text-green-600" : "text-red-600"
+          }`}
+        >
+          {message}
+        </div>
       )}
     </div>
   );

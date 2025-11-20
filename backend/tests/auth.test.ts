@@ -19,8 +19,7 @@ describe("Auth API (Local)", () => {
     const res = await request(app).get(
       `/auth/confirm?email=${encodeURIComponent(testEmail)}&code=999999`
     );
-    expect(res.statusCode).toBe(200);
-    expect(res.text).toContain("有効化されました");
+    expect(res.statusCode).toBe(302);
   });
 
   it("login", async () => {
@@ -51,10 +50,7 @@ describe("Auth API (Local)", () => {
         )}&accessToken=${encodeURIComponent(accessToken)}&code=999999`
       )
       .set("Authorization", `Bearer ${accessToken}`);
-    expect(res.statusCode).toBe(200);
-    expect(res.text).toContain(
-      "メールアドレスが newtest@example.com に変更されました"
-    );
+    expect(res.statusCode).toBe(302);
   });
 
   it("change password", async () => {

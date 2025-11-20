@@ -164,7 +164,8 @@ export const updateEmail = async (req: AuthRequest, res: Response) => {
       await sendMail(
         newEmail,
         "【メール変更確認】リンクをクリックしてください",
-        `以下のリンクでメール変更を承認してください\n\n${confirmLink}`
+        `以下のリンクでメール変更を承認してください\n\n
+        ${confirmLink}`
       );
     }
 
@@ -196,9 +197,8 @@ export const updateEmailConfirm = async (req: AuthRequest, res: Response) => {
 
   try {
     await emailChange(accessToken, newEmail);
-
     await saveLog(userId, "updateEmail", { newEmail });
-    res.json({ message: `メールアドレスが ${newEmail} に変更されました` });
+    res.redirect(`${env.FRONTEND_URL}/user/dashboard`);
   } catch (error: any) {
     res
       .status(500)

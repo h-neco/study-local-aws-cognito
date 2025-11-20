@@ -5,7 +5,9 @@ import SignupPage from "./pages/SignupPage";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import Header from "./components/Header";
-import UserDashboard from "./pages/user/UserDashboard"; // 仮に作るページ
+import UserDashboard from "./pages/user/UserDashboard";
+import ChangeEmail from "./pages/user/profile/ChangeEmail";
+import ChangePassword from "./pages/user/profile/ChangePassword";
 
 // ログイン済みユーザー向けレイアウト
 function UserLayout() {
@@ -32,7 +34,8 @@ function App() {
       {/* User（ログイン後） */}
       <Route path="/user" element={<UserLayout />}>
         <Route path="dashboard" element={<UserDashboard />} />
-        {/* 他の /user/* ページもここに追加 */}
+        <Route path="profile/change-email" element={<ChangeEmail />} />
+        <Route path="profile/change-password" element={<ChangePassword />} />
       </Route>
     </Routes>
   );

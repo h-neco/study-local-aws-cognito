@@ -32,11 +32,25 @@ describe("Admin API (Local)", () => {
     });
     adminToken = loginRes.body.accessToken;
 
+    const listUsersOutput = execSync(
+      `
+  aws cognito-idp list-users \
+    --user-pool-id ${env.COGNITO_USER_POOL_ID} \
+    --filter "email=\\"${adminEmail}\\"" \
+    --endpoint-url http://localhost:5001 \
+    --region us-east-1
+`,
+      { encoding: "utf-8" }
+    );
+
+    const listUsers = JSON.parse(listUsersOutput);
+    const username = listUsers.Users?.[0]?.Username;
+
     // Admin権限付与 (CLI 実行)
     execSync(`
       aws cognito-idp admin-update-user-attributes \
         --user-pool-id ${env.COGNITO_USER_POOL_ID} \
-        --username ${adminEmail} \
+        --username ${username} \
         --user-attributes Name="custom:isAdmin",Value="true" \
         --endpoint-url http://localhost:5001 \
         --region us-east-1
@@ -65,7 +79,6 @@ describe("Admin API (Local)", () => {
       .set("Authorization", `Bearer ${adminToken}`);
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.some((u: any) => u.Username === targetEmail)).toBe(true);
   });
 
   // 一覧取得不可
@@ -92,7 +105,6 @@ describe("Admin API (Local)", () => {
       .set("Authorization", `Bearer ${targetToken}`);
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.some((u: any) => u.Username === targetEmail)).toBe(true);
   });
 
   // 権限剥奪

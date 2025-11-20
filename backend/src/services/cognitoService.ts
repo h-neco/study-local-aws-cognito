@@ -11,8 +11,10 @@ import {
   AdminUpdateUserAttributesCommand,
   ChangePasswordCommand,
   UpdateUserAttributesCommand,
+  SignUpCommandOutput,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { env } from "../config/env";
+import { v4 as uuid } from "uuid";
 
 const client = new CognitoIdentityProviderClient({
   region: env.AWS_REGION,
@@ -21,29 +23,66 @@ const client = new CognitoIdentityProviderClient({
 
 /**
  * ユーザー登録
+ * Username は UUID に固定、email は属性として登録
  */
-export async function signupCognitoUser(email: string, password: string) {
+export async function signupCognitoUser(
+  email: string,
+  password: string
+): Promise<SignUpCommandOutput> {
   const command = new SignUpCommand({
-    ClientId: env.COGNITO_CLIENT_ID,
-    Username: email,
+    ClientId: env.COGNITO_CLIENT_ID!,
+    Username: uuid(), // 内部識別用
     Password: password,
+    UserAttributes: [{ Name: "email", Value: email }],
   });
   return await client.send(command);
+}
+
+/**
+ * サインアップ確認
+ * Cognito は email での確認をサポートしないため、事前に ListUsers で Username を取得
+ */
+export async function confirmCognitoUser(email: string, code: string) {
+  // Username を email から取得
+  const users = await client.send(
+    new ListUsersCommand({
+      UserPoolId: env.COGNITO_USER_POOL_ID,
+      Filter: `email = "${email}"`,
+    })
+  );
+  const user = users.Users?.[0];
+  if (!user || !user.Username) throw new Error("ユーザーが見つかりません");
+
+  const command = new ConfirmSignUpCommand({
+    ClientId: env.COGNITO_CLIENT_ID,
+    Username: user.Username,
+    ConfirmationCode: code,
+  });
+  await client.send(command);
+  return { message: `User ${email} confirmed successfully` };
 }
 
 /**
  * ログイン
  */
 export async function loginCognitoUser(email: string, password: string) {
+  const users = await client.send(
+    new ListUsersCommand({
+      UserPoolId: env.COGNITO_USER_POOL_ID,
+      Filter: `email = "${email}"`,
+    })
+  );
+  const user = users.Users?.[0];
+  if (!user || !user.Username) throw new Error("ユーザーが見つかりません");
+
   const command = new InitiateAuthCommand({
     AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
     ClientId: env.COGNITO_CLIENT_ID,
     AuthParameters: {
-      USERNAME: email,
+      USERNAME: user.Username,
       PASSWORD: password,
     },
   });
-
   const response = await client.send(command);
   return {
     accessToken: response.AuthenticationResult?.AccessToken,
@@ -56,23 +95,47 @@ export async function loginCognitoUser(email: string, password: string) {
  * ログアウト
  */
 export async function logoutCognitoUser(accessToken: string) {
-  const command = new GlobalSignOutCommand({
-    AccessToken: accessToken,
-  });
+  const command = new GlobalSignOutCommand({ AccessToken: accessToken });
   await client.send(command);
   return { message: "User logged out successfully" };
 }
 
 /**
- * 退会
+ * Cognito ユーザー削除（Username = userId）
  */
-export async function deleteCognitoUser(email: string) {
+export async function deleteCognitoUserById(userId: string) {
+  if (!userId) throw new Error("UserId is required");
+
   const command = new AdminDeleteUserCommand({
     UserPoolId: env.COGNITO_USER_POOL_ID,
-    Username: email,
+    Username: userId,
   });
+
   await client.send(command);
-  return { message: `User ${email} deleted successfully` };
+  return { message: `User ${userId} deleted successfully` };
+}
+
+/**
+ * ユーザー削除
+ */
+export async function deleteCognitoUserByEmail(email: string) {
+  console.log(email);
+  const users = await client.send(
+    new ListUsersCommand({
+      UserPoolId: env.COGNITO_USER_POOL_ID,
+      Filter: `email = "${email}"`,
+    })
+  );
+  const user = users.Users?.[0];
+  if (!user || !user.Username) throw new Error("ユーザーが見つかりません");
+
+  console.log(user.Username);
+
+  const command = new AdminDeleteUserCommand({
+    UserPoolId: env.COGNITO_USER_POOL_ID,
+    Username: user.Username,
+  });
+  return await client.send(command);
 }
 
 /**
@@ -88,70 +151,64 @@ export async function listCognitoUsers() {
 }
 
 /**
- * ユーザー承認（サインアップ承認）
+ * 管理者承認
  */
 export async function approveCognitoUser(email: string) {
+  const users = await client.send(
+    new ListUsersCommand({
+      UserPoolId: env.COGNITO_USER_POOL_ID,
+      Filter: `email = "${email}"`,
+    })
+  );
+  const user = users.Users?.[0];
+  if (!user || !user.Username) throw new Error("ユーザーが見つかりません");
+
   const command = new AdminConfirmSignUpCommand({
     UserPoolId: env.COGNITO_USER_POOL_ID,
-    Username: email,
+    Username: user.Username,
   });
   await client.send(command);
   return { message: `User ${email} approved successfully` };
 }
 
 /**
- * サインアップ確認（Cognito用）
- * @param email ユーザーのメールアドレス
- * @param code 確認コード
- */
-export async function confirmCognitoUser(email: string, code: string) {
-  const command = new ConfirmSignUpCommand({
-    ClientId: env.COGNITO_CLIENT_ID,
-    Username: email,
-    ConfirmationCode: code,
-  });
-  await client.send(command);
-
-  return { message: `User ${email} confirmed successfully` };
-}
-
-/**
- * 管理者権限を付与（isAdmin = true）
+ * 管理者権限付与/剥奪
  */
 export async function makeUserAdmin(email: string) {
+  const users = await client.send(
+    new ListUsersCommand({
+      UserPoolId: env.COGNITO_USER_POOL_ID,
+      Filter: `email = "${email}"`,
+    })
+  );
+  const user = users.Users?.[0];
+  if (!user || !user.Username) throw new Error("ユーザーが見つかりません");
+
   const command = new AdminUpdateUserAttributesCommand({
     UserPoolId: env.COGNITO_USER_POOL_ID,
-    Username: email,
-    UserAttributes: [
-      {
-        Name: "custom:isAdmin",
-        Value: "true",
-      },
-    ],
+    Username: user.Username,
+    UserAttributes: [{ Name: "custom:isAdmin", Value: "true" }],
   });
-
   await client.send(command);
-
   return { message: `User ${email} is now admin` };
 }
 
-/**
- * 管理者権限を剥奪（isAdmin = false）
- */
 export async function removeUserAdmin(email: string) {
+  const users = await client.send(
+    new ListUsersCommand({
+      UserPoolId: env.COGNITO_USER_POOL_ID,
+      Filter: `email = "${email}"`,
+    })
+  );
+  const user = users.Users?.[0];
+  if (!user || !user.Username) throw new Error("ユーザーが見つかりません");
+
   const command = new AdminUpdateUserAttributesCommand({
     UserPoolId: env.COGNITO_USER_POOL_ID,
-    Username: email,
-    UserAttributes: [
-      {
-        Name: "custom:isAdmin",
-        Value: "false",
-      },
-    ],
+    Username: user.Username,
+    UserAttributes: [{ Name: "custom:isAdmin", Value: "false" }],
   });
-
   await client.send(command);
-
   return { message: `User ${email} admin removed` };
 }
 
@@ -179,32 +236,9 @@ export async function updateCognitoEmail(
   accessToken: string,
   newEmail: string
 ) {
-  if (env.TARGET_ENV === "local") {
-    // ローカル用: 確認コード固定 999999
-    const confirmationCode = "999999";
-    console.log(
-      `Local: request email change to ${newEmail}, code=${confirmationCode}`
-    );
-    return {
-      confirmationCode,
-      newEmail,
-      message: "Local email change requested",
-    };
-  } else {
-    const command = new UpdateUserAttributesCommand({
-      AccessToken: accessToken,
-      UserAttributes: [{ Name: "email", Value: newEmail }],
-    });
-    await client.send(command);
-    return { message: `Email updated to ${newEmail}` };
-  }
-}
-
-export async function emailChange(accessToken: string, newEmail: string) {
   const command = new UpdateUserAttributesCommand({
-    UserAttributes: [{ Name: "email", Value: newEmail }],
     AccessToken: accessToken,
+    UserAttributes: [{ Name: "email", Value: newEmail }],
   });
-  await client.send(command);
-  return { message: `Email changed to ${newEmail}` };
+  return await client.send(command);
 }

@@ -8,9 +8,8 @@ import {
   approveCognitoUser,
   changeCognitoPassword,
   updateCognitoEmail,
-  emailChange,
   listCognitoUsers,
-  deleteCognitoUser,
+  deleteCognitoUserById,
 } from "../services/cognitoService";
 import { saveLog } from "../services/dynamoService";
 import { sendMail } from "../services/mailService";
@@ -21,7 +20,6 @@ import { env } from "../config/env";
  */
 export const signup = async (req: AuthRequest, res: Response) => {
   const { email, password } = req.body;
-
   try {
     await signupCognitoUser(email, password);
 
@@ -44,7 +42,9 @@ export const signup = async (req: AuthRequest, res: Response) => {
     await saveLog(email, "signup");
     res.status(200).json({ message: "確認メール発行しました" });
   } catch (error: any) {
-    res.status(400).json({ error: error.message || "Unknown error" });
+    res.status(400).json({
+      error: error.message || "Unknown error",
+    });
   }
 };
 
@@ -121,8 +121,7 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
       u.Attributes?.some((a) => a.Name === "sub" && a.Value === userId)
     );
     if (!targetUser) throw new Error("User not found");
-    const email = targetUser.Username!;
-    const result = deleteCognitoUser(email);
+    const result = deleteCognitoUserById(targetUser.Username!);
     await saveLog(userId, "delete");
     res.json(result);
   } catch (error) {
@@ -150,16 +149,12 @@ export const updateEmail = async (req: AuthRequest, res: Response) => {
 
     if (env.TARGET_ENV !== "local") {
       // 本番: Cognito に更新リクエスト（Cognito がメール送信）
-      const result = await updateCognitoEmail(accessToken, newEmail);
-      // Cognito から送られるコードは result に入ることもある
-      confirmationCode = result.confirmationCode || "";
+      await updateCognitoEmail(accessToken, newEmail);
     } else {
       // local 環境は MailHog に確認メールを送る
       const confirmLink = `http://localhost:3000/auth/email-change-confirm?newEmail=${encodeURIComponent(
         newEmail
-      )}&accessToken=${encodeURIComponent(
-        accessToken
-      )}&code=${confirmationCode}`;
+      )}&accessToken=${encodeURIComponent(accessToken)}`;
 
       await sendMail(
         newEmail,
@@ -196,7 +191,7 @@ export const updateEmailConfirm = async (req: AuthRequest, res: Response) => {
   }
 
   try {
-    await emailChange(accessToken, newEmail);
+    await updateCognitoEmail(accessToken, newEmail);
     await saveLog(userId, "updateEmail", { newEmail });
     res.redirect(`${env.FRONTEND_URL}/user/dashboard`);
   } catch (error: any) {

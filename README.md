@@ -7,7 +7,6 @@ mail は SES を擬似的に mailhog で再現してます。
 ```
 TODO:
   - API クライアントの抽象化
-  - パスワード/emailリセット
   - Refresh Token の対応（バックエンド + フロント）
   - トークン有効判定（API or Lambda@Edge）
   - バックエンドでの Cognito JWT 検証ミドルウェア
@@ -75,9 +74,16 @@ open http://localhost:5173/
 初期ユーザーのみ以下 CLI で admin を作成。以後、管理画面にて操作
 
 ```bash
+aws cognito-idp list-users \
+  --user-pool-id $USER_POOL_ID \
+  --endpoint-url http://localhost:5001 \
+  --region $REGION \
+  --query 'Users[].Username' \
+  --output text
+
 aws cognito-idp admin-update-user-attributes \
  --user-pool-id us-east-idp \
- --username test@example.com \
+ --username ID \
  --user-attributes Name="custom:isAdmin",Value="true" \
  --endpoint-url http://localhost:5001 \
  --region us-east-1

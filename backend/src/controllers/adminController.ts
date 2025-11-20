@@ -2,7 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../types/AuthRequest";
 import {
   listCognitoUsers,
-  deleteCognitoUser,
+  deleteCognitoUserByEmail,
 } from "../services/cognitoService";
 import { saveLog } from "../services/dynamoService";
 import { makeUserAdmin, removeUserAdmin } from "../services/cognitoService";
@@ -26,9 +26,8 @@ export const getUserList = async (req: AuthRequest, res: Response) => {
 export const deleteUser = async (req: AuthRequest, res: Response) => {
   const { email } = req.body;
   const userId = req.user?.userId!;
-
   try {
-    const result = await deleteCognitoUser(email);
+    const result = await deleteCognitoUserByEmail(email);
     await saveLog(userId, "delete", {
       targetEmail: email,
     });
@@ -46,6 +45,7 @@ export const promoteToAdmin = async (req: AuthRequest, res: Response) => {
   const { email } = req.body;
   const userId = req.user?.userId!;
 
+  console.log(email);
   try {
     const result = await makeUserAdmin(email);
     await saveLog(userId, "promoteAdmin", {

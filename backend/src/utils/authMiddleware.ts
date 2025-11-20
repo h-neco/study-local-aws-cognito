@@ -26,7 +26,13 @@ export async function authMiddleware(
   res: Response,
   next: NextFunction
 ) {
-  const token = req.headers.authorization?.split(" ")[1];
+  // まず Authorization ヘッダーを読む
+  let token = req.headers.authorization?.split(" ")[1];
+
+  // もしヘッダーが無い場合、クエリパラメータの accessToken を使う
+  if (!token && req.query.accessToken) {
+    token = String(req.query.accessToken);
+  }
   if (!token) return res.status(401).json({ error: "Unauthorized" });
 
   try {

@@ -6,13 +6,13 @@ mail は SES を擬似的に mailhog で再現してます。
 
 ```
 TODO:
-  - API クライアントの抽象化
-  - パスワード/emailリセット
+  - userIDにメールアドレスを使ってたが、属性にする(途中)
   - Refresh Token の対応（バックエンド + フロント）
   - トークン有効判定（API or Lambda@Edge）
   - バックエンドでの Cognito JWT 検証ミドルウェア
   - 管理者権限ルートの保護（フロント＋API 両方）
   - ユーザーの「自分の情報ページ」（プロフィール表示）
+  - ログきれいにする
 
   - 管理者用
     - ユーザー一覧取得のページング化
@@ -53,14 +53,9 @@ terraform init && terraform plan
 terraform apply
 cd ..
 
-### backend
-cd backend
-npm run dev &
-cd ..
-
-## frontend
-cd frontend
-npm run dev
+### backend & frontend
+./local-start.sh start
+./local-start.sh stop
 ```
 
 ## メール確認 (ローカルで擬似再現)
@@ -80,9 +75,16 @@ open http://localhost:5173/
 初期ユーザーのみ以下 CLI で admin を作成。以後、管理画面にて操作
 
 ```bash
+aws cognito-idp list-users \
+  --user-pool-id $USER_POOL_ID \
+  --endpoint-url http://localhost:5001 \
+  --region $REGION \
+  --query 'Users[].Username' \
+  --output text
+
 aws cognito-idp admin-update-user-attributes \
- --user-pool-id us-east-idp \
- --username test@example.com \
+ --user-pool-id us-east-1_25b89f2e1d1445fb9f817bdd7f78a739 \
+ --username 5e31e653-38fc-4ce5-af19-e4145dd8c6f4 \
  --user-attributes Name="custom:isAdmin",Value="true" \
  --endpoint-url http://localhost:5001 \
  --region us-east-1

@@ -27,24 +27,23 @@ describe("Auth API (Local)", () => {
     const res = await request(app)
       .post("/auth/login")
       .send({ email: testEmail, password: testPassword });
-
     expect(res.statusCode).toBe(200);
-
     expect(res.body).toHaveProperty("accessToken");
-    expect(res.body).toHaveProperty("refreshToken");
-
     accessToken = res.body.accessToken;
-    refreshToken = res.body.refreshToken;
+
+    const cookieHeader = res.headers["set-cookie"];
+    expect(cookieHeader).toBeDefined();
+    const match = cookieHeader[0].match(/refreshToken=([^;]+);/);
+    expect(match).toBeTruthy();
+    refreshToken = match![1];
   });
 
   it("refresh tokens", async () => {
     const res = await request(app)
       .post("/auth/refresh-tokens")
-      .send({ refreshToken });
-
+      .set("Cookie", [`refreshToken=${refreshToken}; Path=/; HttpOnly`]);
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty("AccessToken");
-
     accessToken = res.body.AccessToken;
   });
 

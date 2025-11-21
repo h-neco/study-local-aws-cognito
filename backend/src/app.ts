@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors"; // ← 追加
 import authRouter from "./routes/authRoutes";
 import adminRouter from "./routes/adminRoutes";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
@@ -15,7 +16,7 @@ app.use(
   })
 );
 
-app.use(express.json());
+app.use(express.json(), cookieParser());
 
 app.options("*", cors()); // ← preflight 失敗する場合の保険
 

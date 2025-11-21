@@ -6,16 +6,16 @@ export function getUserList() {
 }
 
 // ユーザー削除
-export function adminDeleteUser(userId: string) {
-  return apiClient.post("/admin/delete", { userId });
+export function adminDeleteUser(email: string) {
+  return apiClient.post("/admin/delete", { email });
 }
 
 // 管理者に昇格
-export function promoteToAdmin(userId: string) {
-  return apiClient.post("/admin/promote", { userId });
+export function promoteToAdmin(email: string) {
+  return apiClient.post("/admin/promote", { email });
 }
 
 // 管理者解除
-export function demoteAdmin(userId: string) {
-  return apiClient.post("/admin/demote", { userId });
+export function demoteAdmin(email: string) {
+  return apiClient.post("/admin/demote", { email });
 }

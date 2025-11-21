@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { logout as apiLogout } from "@/api/auth";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -13,15 +14,16 @@ export default function Header() {
   const isUserPage = location.pathname.startsWith("/user");
   if (!isUserPage) return null;
 
-  function logout() {
-    fetch("http://localhost:3000/auth/logout", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    }).finally(() => {
+  /** --- ユーザー一覧取得 --- */
+  const logout = async () => {
+    try {
+      await apiLogout();
       localStorage.removeItem("accessToken");
       navigate("/login");
-    });
-  }
+    } catch {
+      console.log("logout error");
+    }
+  };
 
   return (
     <header className="bg-white shadow-md px-4 py-3 flex justify-between items-center relative">

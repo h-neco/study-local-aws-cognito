@@ -16,7 +16,8 @@ export type LogRecord = {
     | "promoteAdmin"
     | "demoteAdmin"
     | "updateEmail"
-    | "changePassword";
+    | "changePassword"
+    | "refresh";
   timestamp: string;
   meta?: Record<string, any>;
   ttl?: number;

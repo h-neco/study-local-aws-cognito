@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { login } from "@/api/auth";
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();
@@ -12,20 +13,14 @@ export default function AdminLoginPage() {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:3000/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const res: any = await login({ email, password });
 
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "ログインに失敗しました");
+      if (!res) {
+        setError("ログインに失敗しました");
         return;
       }
 
-      const data = await res.json();
-      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("accessToken", res.accessToken);
 
       // 成功したらダッシュボードに遷移
       navigate("/admin/dashboard");

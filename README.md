@@ -6,8 +6,7 @@ mail は SES を擬似的に mailhog で再現してます。
 
 ```
 TODO:
-  - userIDにメールアドレスを使ってたが、属性にする(途中)
-  - Refresh Token の対応（バックエンド + フロント）
+  - token http and secure for prod
   - トークン有効判定（API or Lambda@Edge）
   - バックエンドでの Cognito JWT 検証ミドルウェア
   - 管理者権限ルートの保護（フロント＋API 両方）

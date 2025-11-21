@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { updatePassword } from "@/api/auth";
 
 export default function ChangePassword() {
   const [previousPassword, setPreviousPassword] = useState("");
@@ -20,25 +21,15 @@ export default function ChangePassword() {
       setMessage("ログイン情報がありません");
       return;
     }
-
-    const res = await fetch("http://localhost:3000/auth/update-password", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        previousPassword,
-        proposedPassword,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (res.ok) {
-      setMessage("パスワードを変更しました");
-    } else {
-      setMessage(data.error || "パスワード変更に失敗しました");
+    try {
+      const res = await updatePassword(previousPassword, proposedPassword);
+      if (res) {
+        setMessage("パスワードを変更しました");
+      } else {
+        setMessage("パスワード変更に失敗しました");
+      }
+    } catch (e: any) {
+      setMessage(e.message);
     }
   }
 

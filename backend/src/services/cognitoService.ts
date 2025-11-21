@@ -12,6 +12,7 @@ import {
   ChangePasswordCommand,
   UpdateUserAttributesCommand,
   SignUpCommandOutput,
+  ChangePasswordCommandOutput,
 } from "@aws-sdk/client-cognito-identity-provider";
 import { env } from "../config/env";
 import { v4 as uuid } from "uuid";
@@ -219,14 +220,13 @@ export async function changeCognitoPassword(
   accessToken: string,
   previousPassword: string,
   proposedPassword: string
-) {
+): Promise<ChangePasswordCommandOutput> {
   const command = new ChangePasswordCommand({
     AccessToken: accessToken,
     PreviousPassword: previousPassword,
     ProposedPassword: proposedPassword,
   });
-  await client.send(command);
-  return { message: "Password changed successfully" };
+  return await client.send(command);
 }
 
 /**

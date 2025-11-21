@@ -6,7 +6,7 @@ mail は SES を擬似的に mailhog で再現してます。
 
 ```
 TODO:
-  - Refresh Token の対応（バックエンド + フロント）
+  - token http and secure for prod
   - トークン有効判定（API or Lambda@Edge）
   - バックエンドでの Cognito JWT 検証ミドルウェア
   - 管理者権限ルートの保護（フロント＋API 両方）

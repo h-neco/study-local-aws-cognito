@@ -16,5 +16,6 @@ router.get(
   authController.updateEmailConfirm
 );
 router.post("/update-password", authMiddleware, authController.updatePassword);
+router.post("/refresh-tokens", authController.refreshTokens);
 
 export default router;

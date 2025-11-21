@@ -10,6 +10,7 @@ import {
   updateCognitoEmail,
   listCognitoUsers,
   deleteCognitoUserById,
+  refreshToken,
 } from "../services/cognitoService";
 import { saveLog } from "../services/dynamoService";
 import { sendMail } from "../services/mailService";
@@ -98,7 +99,6 @@ export const login = async (req: AuthRequest, res: Response) => {
 export const logout = async (req: AuthRequest, res: Response) => {
   const userId = req.user?.userId!;
   const { accessToken } = req.body;
-
   try {
     const result = await logoutCognitoUser(accessToken);
     await saveLog(userId, "logout");
@@ -228,5 +228,19 @@ export const updatePassword = async (req: AuthRequest, res: Response) => {
     res
       .status(400)
       .json({ error: error.message || "Failed to change password" });
+  }
+};
+
+/*
+ * refreshTokens
+ */
+export const refreshTokens = async (req: Request, res: Response) => {
+  const { refreshToken: refreshTokenValue } = req.body;
+  try {
+    const result = await refreshToken(refreshTokenValue);
+    res.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    res.status(400).json({ error: message });
   }
 };

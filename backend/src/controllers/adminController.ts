@@ -45,7 +45,6 @@ export const promoteToAdmin = async (req: AuthRequest, res: Response) => {
   const { email } = req.body;
   const userId = req.user?.userId!;
 
-  console.log(email);
   try {
     const result = await makeUserAdmin(email);
     await saveLog(userId, "promoteAdmin", {

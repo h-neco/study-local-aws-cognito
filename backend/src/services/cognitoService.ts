@@ -120,7 +120,6 @@ export async function deleteCognitoUserById(userId: string) {
  * ユーザー削除
  */
 export async function deleteCognitoUserByEmail(email: string) {
-  console.log(email);
   const users = await client.send(
     new ListUsersCommand({
       UserPoolId: env.COGNITO_USER_POOL_ID,
@@ -241,4 +240,23 @@ export async function updateCognitoEmail(
     UserAttributes: [{ Name: "email", Value: newEmail }],
   });
   return await client.send(command);
+}
+
+/**
+ * リフレッシュトークン
+ * @param refreshToken
+ * @returns
+ */
+export async function refreshToken(refreshToken: string) {
+  const res = await client.send(
+    new InitiateAuthCommand({
+      AuthFlow: "REFRESH_TOKEN_AUTH",
+      ClientId: env.COGNITO_CLIENT_ID,
+      AuthParameters: {
+        REFRESH_TOKEN: refreshToken,
+      },
+    })
+  );
+
+  return res.AuthenticationResult;
 }

@@ -1,47 +1,74 @@
 import { apiClient } from "./client";
+import {
+  setAccessToken,
+  getRefreshToken,
+  getAccessToken,
+} from "../utils/tokenStorage";
 
-// サインアップ
+// -------------------------
+// refresh token
+// -------------------------
+export async function refreshTokenApi() {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+
+  const res = await apiClient.post("/auth/refresh-tokens", {
+    refreshToken: refreshToken,
+  });
+
+  const newToken = res.AccessToken;
+
+  if (newToken) setAccessToken(newToken);
+
+  return newToken;
+}
+
+// -------------------------
+// signup
+// -------------------------
 export function signup(data: { email: string; password: string }) {
   return apiClient.post("/auth/signup", data);
 }
 
-// ログイン
-export function login(data: { email: string; password: string }) {
-  return apiClient.post("/auth/login", data);
+// login
+export async function login(data: { email: string; password: string }) {
+  const res = await apiClient.post("/auth/login", data);
+  const token = res.accessToken;
+  if (token) setAccessToken(token);
+  return res;
 }
 
-// ログアウト
+// logout
 export function logout() {
-  return apiClient.post("/auth/logout");
+  const accessToken = getAccessToken();
+  return apiClient.post("/auth/logout", { accessToken: accessToken });
 }
 
-// ユーザー削除
+// delete user
 export function deleteUser() {
-  return apiClient.post("/auth/delete");
+  const accessToken = getAccessToken();
+  return apiClient.post("/auth/delete", { accessToken: accessToken });
 }
 
-// メール変更要求（確認メール送信）
+// update email
 export function updateEmail(newEmail: string) {
-  const accessToken = localStorage.getItem("accessToken");
-
+  const accessToken = getAccessToken();
   return apiClient.post("/auth/update-email", {
-    newEmail,
-    accessToken,
+    newEmail: newEmail,
+    accessToken: accessToken,
   });
 }
 
-// メール変更確認
+// confirm email change
 export function confirmEmailChange(params: {
   newEmail: string;
   accessToken: string;
   code: string;
 }) {
-  return apiClient.get("/auth/email-change-confirm", {
-    params,
-  });
+  return apiClient.get("/auth/email-change-confirm", { params });
 }
 
-// パスワード変更
+// update password
 export function updatePassword(previousPassword: string, newPassword: string) {
   return apiClient.post("/auth/update-password", {
     previousPassword,

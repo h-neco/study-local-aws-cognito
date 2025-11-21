@@ -31,11 +31,6 @@ export default function AdminDashboard() {
 
   /** --- ユーザー一覧取得 --- */
   const fetchUsers = useCallback(async () => {
-    if (!token) {
-      setError("ログインしてください");
-      return;
-    }
-
     try {
       const res: any = await getUserList();
       if (!res) {
@@ -62,7 +57,6 @@ export default function AdminDashboard() {
     if (!token || !email) return;
 
     if (confirmMsg && !confirm(confirmMsg)) return;
-
     await action(email);
     fetchUsers();
   };

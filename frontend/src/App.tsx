@@ -8,6 +8,7 @@ import Header from "./components/Header";
 import UserDashboard from "./pages/user/UserDashboard";
 import ChangeEmail from "./pages/user/profile/ChangeEmail";
 import ChangePassword from "./pages/user/profile/ChangePassword";
+import AuthProvider from "./context/AuthContext";
 
 // ログイン済みユーザー向けレイアウト
 function UserLayout() {
@@ -21,23 +22,25 @@ function UserLayout() {
 
 function App() {
   return (
-    <Routes>
-      {/* Public */}
-      <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
+    <AuthProvider>
+      <Routes>
+        {/* Public */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
 
-      {/* Admin */}
-      <Route path="/admin/login" element={<AdminLoginPage />} />
-      <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        {/* Admin */}
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
-      {/* User（ログイン後） */}
-      <Route path="/user" element={<UserLayout />}>
-        <Route path="dashboard" element={<UserDashboard />} />
-        <Route path="profile/change-email" element={<ChangeEmail />} />
-        <Route path="profile/change-password" element={<ChangePassword />} />
-      </Route>
-    </Routes>
+        {/* User（ログイン後） */}
+        <Route path="/user" element={<UserLayout />}>
+          <Route path="dashboard" element={<UserDashboard />} />
+          <Route path="profile/change-email" element={<ChangeEmail />} />
+          <Route path="profile/change-password" element={<ChangePassword />} />
+        </Route>
+      </Routes>
+    </AuthProvider>
   );
 }
 

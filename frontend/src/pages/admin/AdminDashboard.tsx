@@ -1,4 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import {
+  getUserList,
+  promoteToAdmin,
+  demoteAdmin,
+  adminDeleteUser,
+} from "@/api/admin";
 
 interface CognitoUser {
   Username: string;
@@ -15,76 +21,58 @@ export default function AdminDashboard() {
 
   const token = localStorage.getItem("accessToken");
 
-  const fetchUsers = async () => {
+  /** --- Utility: 属性からメール取得 --- */
+  const getEmail = (user: CognitoUser): string | undefined =>
+    user.Attributes.find((a) => a.Name === "email")?.Value;
+
+  /** --- Utility: admin フラグ取得 --- */
+  const isAdmin = (user: CognitoUser): boolean =>
+    user.Attributes.find((a) => a.Name === "custom:isAdmin")?.Value === "true";
+
+  /** --- ユーザー一覧取得 --- */
+  const fetchUsers = useCallback(async () => {
     if (!token) {
       setError("ログインしてください");
       return;
     }
+
     try {
-      const res = await fetch("http://localhost:3000/admin/users", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "ユーザー一覧取得に失敗しました");
+      const res: any = await getUserList();
+      if (!res) {
+        setError("ユーザー一覧取得に失敗しました");
         return;
       }
-      const data = await res.json();
-      setUsers(data);
+      setUsers(res);
+      setError("");
     } catch (err: any) {
       setError(err.message || "ネットワークエラー");
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
-  const handlePromote = async (email: string) => {
-    if (!token) return;
-    await fetch("http://localhost:3000/admin/promote", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ email: email }),
-    });
-    fetchUsers(); // 更新
-  };
+  /** --- 操作共通ハンドラ（昇格・降格・削除） --- */
+  const performAction = async (
+    action: (email: string) => Promise<any>,
+    email?: string,
+    confirmMsg?: string
+  ) => {
+    if (!token || !email) return;
 
-  const handleDemote = async (email: string) => {
-    if (!token) return;
-    await fetch("http://localhost:3000/admin/demote", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ email: email }),
-    });
-    fetchUsers();
-  };
+    if (confirmMsg && !confirm(confirmMsg)) return;
 
-  const handleDelete = async (email: string) => {
-    if (!token) return;
-    if (!confirm(`${email} を削除しますか？`)) return;
-
-    await fetch("http://localhost:3000/admin/delete", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ email: email }),
-    });
+    await action(email);
     fetchUsers();
   };
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <h1 className="text-2xl font-bold mb-4">管理者ダッシュボード</h1>
+
       {error && <p className="text-red-500 mb-4">{error}</p>}
+
       <div className="overflow-x-auto">
         <table className="min-w-full table-fixed bg-white border border-gray-200 rounded-lg">
           <thead className="bg-gray-100">
@@ -98,21 +86,16 @@ export default function AdminDashboard() {
               <th className="w-1/6 px-4 py-2 border-b text-left">操作</th>
             </tr>
           </thead>
+
           <tbody>
             {users.map((user) => {
-              const isAdmin =
-                user.Attributes.find((a) => a.Name === "custom:isAdmin")
-                  ?.Value === "true";
-
-              const email = user.Attributes.find(
-                (a) => a.Name === "email"
-              )?.Value;
+              const email = getEmail(user);
 
               return (
                 <tr key={user.Username} className="hover:bg-gray-50">
                   <td className="px-4 py-2 border-b truncate">{email}</td>
                   <td className="px-4 py-2 border-b">
-                    {isAdmin ? "Yes" : "No"}
+                    {isAdmin(user) ? "Yes" : "No"}
                   </td>
                   <td className="px-4 py-2 border-b">{user.UserStatus}</td>
                   <td className="px-4 py-2 border-b">
@@ -124,25 +107,33 @@ export default function AdminDashboard() {
                   <td className="px-4 py-2 border-b truncate">
                     {new Date(user.UserLastModifiedDate).toLocaleString()}
                   </td>
+
                   <td className="px-4 py-2 border-b">
                     <div className="flex gap-2 flex-wrap">
-                      {isAdmin ? (
+                      {isAdmin(user) ? (
                         <button
-                          onClick={() => handleDemote(email)}
+                          onClick={() => performAction(demoteAdmin, email)}
                           className="px-2 py-1 bg-yellow-500 text-white rounded text-sm"
                         >
                           権限剥奪
                         </button>
                       ) : (
                         <button
-                          onClick={() => handlePromote(email)}
+                          onClick={() => performAction(promoteToAdmin, email)}
                           className="px-2 py-1 bg-green-500 text-white rounded text-sm"
                         >
                           管理者にする
                         </button>
                       )}
+
                       <button
-                        onClick={() => handleDelete(email)}
+                        onClick={() =>
+                          performAction(
+                            adminDeleteUser,
+                            email,
+                            `${email} を削除しますか？`
+                          )
+                        }
                         className="px-2 py-1 bg-red-500 text-white rounded text-sm"
                       >
                         削除

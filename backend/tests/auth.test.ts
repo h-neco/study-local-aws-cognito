@@ -6,6 +6,7 @@ describe("Auth API (Local)", () => {
   const testEmail = `test${randomNumber}@example.com`;
   const testPassword = "Passw0rd!";
   let accessToken = "";
+  let refreshToken = "";
 
   it("signup", async () => {
     const res = await request(app)
@@ -26,9 +27,25 @@ describe("Auth API (Local)", () => {
     const res = await request(app)
       .post("/auth/login")
       .send({ email: testEmail, password: testPassword });
+
     expect(res.statusCode).toBe(200);
+
     expect(res.body).toHaveProperty("accessToken");
+    expect(res.body).toHaveProperty("refreshToken");
+
     accessToken = res.body.accessToken;
+    refreshToken = res.body.refreshToken;
+  });
+
+  it("refresh tokens", async () => {
+    const res = await request(app)
+      .post("/auth/refresh-tokens")
+      .send({ refreshToken });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty("AccessToken");
+
+    accessToken = res.body.AccessToken;
   });
 
   it("update email", async () => {

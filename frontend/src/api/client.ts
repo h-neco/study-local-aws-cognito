@@ -1,12 +1,11 @@
 import axios, { AxiosError } from "axios";
-import { refreshTokenApi } from "./auth";
 import { getAccessToken, setAccessToken } from "../utils/tokenStorage";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export const apiClient = axios.create({
   baseURL: API_BASE,
-  withCredentials: import.meta.env.VITE_ENV === "production",
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
@@ -19,22 +18,32 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// レスポンス：401 → リフレッシュ → 再実行
+// レスポンス interceptor
 apiClient.interceptors.response.use(
   (res) => res.data,
-  async (error: AxiosError) => {
-    if (error.response?.status === 401) {
+  async (error: AxiosError & { config?: any }) => {
+    const originalRequest = error.config;
+
+    // 401 かつまだリトライしていない場合
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
       try {
-        const newToken = await refreshTokenApi();
-        if (!newToken) throw new Error("Refresh token missing");
+        // サーバーにリフレッシュリクエスト
+        // httpOnly cookie は自動送信される
+        const res = await axios.post(
+          `${import.meta.env.VITE_API_BASE_URL}/auth/refresh-tokens`,
+          {},
+          { withCredentials: true }
+        );
+        const newToken = res.data;
+        if (!newToken) throw new Error("Refresh failed");
 
         setAccessToken(newToken);
 
-        // retry original request
-        const retry = error.config!;
-        retry.headers.Authorization = `Bearer ${newToken}`;
-
-        return apiClient.request(retry);
+        // 元のリクエストを再実行
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        return apiClient.request(originalRequest);
       } catch (err) {
         console.error("Token refresh failed", err);
       }

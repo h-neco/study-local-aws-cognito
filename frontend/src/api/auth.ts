@@ -1,25 +1,13 @@
 import { apiClient } from "./client";
-import {
-  setAccessToken,
-  getRefreshToken,
-  getAccessToken,
-} from "../utils/tokenStorage";
+import { setAccessToken, getAccessToken } from "../utils/tokenStorage";
 
 // -------------------------
 // refresh token
 // -------------------------
 export async function refreshTokenApi() {
-  const refreshToken = getRefreshToken();
-  if (!refreshToken) return null;
-
-  const res = await apiClient.post("/auth/refresh-tokens", {
-    refreshToken: refreshToken,
-  });
-
+  const res = await apiClient.post("/auth/refresh-tokens", {});
   const newToken = res.AccessToken;
-
   if (newToken) setAccessToken(newToken);
-
   return newToken;
 }
 

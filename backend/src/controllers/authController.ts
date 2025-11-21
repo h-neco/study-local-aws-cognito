@@ -86,7 +86,13 @@ export const login = async (req: AuthRequest, res: Response) => {
   try {
     const result = await loginCognitoUser(email, password);
     await saveLog(email, "login");
-    res.json(result);
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30日
+    });
+    res.json({ accessToken: result.accessToken });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     res.status(400).json({ error: message });
@@ -235,10 +241,14 @@ export const updatePassword = async (req: AuthRequest, res: Response) => {
  * refreshTokens
  */
 export const refreshTokens = async (req: Request, res: Response) => {
-  const { refreshToken: refreshTokenValue } = req.body;
+  const refreshTokenValue = req.cookies.refreshToken;
+  console.log(refreshTokenValue);
+  if (!refreshTokenValue) {
+    return res.status(401).json({ error: "Refresh token missing" });
+  }
   try {
     const result = await refreshToken(refreshTokenValue);
-    res.json(result);
+    res.json(result?.AccessToken);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     res.status(400).json({ error: message });
